@@ -1,0 +1,79 @@
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval StartTime=BUILD_START_TIME+"-CST"| eval FStartTime=strftime(strptime(StartTime,"%Y%m%d%H%M%S %Z"),"%Y/%m/%d %H:%M:%S %Z") | table JOB_NAME, StartTime
+
+
+============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval StartTime=BUILD_START_TIME+"-CST"| eval FormatTime=strftime(strptime(StartTime,"%Y%m%d%H%M%S %Z"),"%Y/%m/%d %H:%M:%S %Z") | table JOB_NAME, FormatTime
+
+=============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | convert timeformat="%Y/%m/%d %H:%M:%S %Z" ctime(BUILD_START_TIME) as StartTime| table JOB_NAME, StartTime
+
+
+===========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval rtime=strftime(BUILD_START_TIME,"%c")| rename rtime as StartTime| table JOB_NAME, StartTime
+
+============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval StartTime=strftime(BUILD_START_TIME,"%Y-%m-%dT%H:%M:%S.%Q")| table JOB_NAME, BUILD_START_TIME, StartTime
+
+=========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval StartTime=strftime(BUILD_START_TIME,"%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(BUILD_START_TIME,"%c")| rename rtime as BuildSTime | table JOB_NAME, BUILD_START_TIME, BuildSTime, StartTime
+
+========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | convert timeformat="%Y/%m/%d %H:%M:%S %Z" ctime(START_TIME) as StartBTime | eval StartTime=strftime(START_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME,"%c")| rename rtime as BuildSTime | table JOB_NAME, BUILD_START_TIME, BuildSTime, StartTime, StartBTime
+
+---- Result from above multiple collection query came back as follows,
+
+JOB_NAME	BUILD_START_TIME	BuildSTime	StartTime	StartBTime
+MastercardDigitalEnablementService/CICD_BTE/MDES_Token_Supply_DMZ4/ITF/index-service	1661881549721	Fri Dec 31 23:59:59 9999	2022-08-30T12:45:49.720	9999/12/31 23:59:59
+CAS-Consumer_Authentication_Solutions/ISSM/SERVICE/STAGE/ds-admin-service-pcf-stage	1661881470424	Fri Dec 31 23:59:59 9999	2022-08-30T12:44:30.424	9999/12/31 23:59:59
+TransactionSecurity/Stand-In/pcf-dev/QE/transec-si-service-bnw-qe	1661882255515	Fri Dec 31 23:59:59 9999	2022-08-30T12:57:35.515	9999/12/31 23:59:59
+---------------------------------------------------------------
+
+1521467703049000000
+1661881241478000000
+
+===========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuildTime=strftime(BUILD_END_TIME,"%Y-%m-%dT%H:%M:%S.%Q")| eval btime=strftime(BUILD_END_TIME,"%c")| rename btime as BuildEndTime | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, BuildEndTime, StartTime, EndTime, BuildTime
+============
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+BTE Working Query
+----------------
+
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+==============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuildEndTime=tostring(EndTime - StartTime) | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(strptime(START_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S"), "%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuildEndTime=tostring(EndTime - StartTime) | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+=============
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuildTime=tostring(strptime(EndTime, "%Y-%m-%d %H:%M:%S") - strptime(StartTime, "%Y-%m-%d %H:%M:%S"), "duration") | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+===========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuilTime=tostring(EndTime - StartTime, "duration") | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+=========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%dT%H:%M:%S.%Q")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%dT%H:%M:%S.%Q")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval Total_duration=tostring((BuildETime - BuildSTime), "duration") | table JOB_NAME, Total_duration, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime
+
+==========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%d %H:%M:%S.%3N")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S.%3N")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval BuildTime=tostring(EndTime - StartTime, "duration") | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+
+===========
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%d %H:%M:%S.%3N")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S.%3N")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval end_time = strptime(EndTime, "%Y-%m-%d %H:%M:%S") | eval start_time = strptime(StartTime, "%Y-%m-%d %H:%M:%S") | eval BuildTime=tostring(end_time - start_time, "duration") | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+------------- Working Start, End and Difference for BTE jobs ----------------
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%d %H:%M:%S.%3N")| eval rtime=strftime(START_TIME/pow(10,9),"%c")| rename rtime as BuildSTime | eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S.%3N")| eval etime=strftime(BEND_TIME/pow(10,9),"%c")| rename etime as BuildETime | eval end_time = strptime(EndTime, "%Y-%m-%d %H:%M:%S") | eval start_time = strptime(StartTime, "%Y-%m-%d %H:%M:%S") | eval BuildTime=tostring(end_time - start_time, "duration") | table JOB_NAME, BUILD_START_TIME, END_TIME, BuildSTime, BuildETime, StartTime, EndTime, BuildTime
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%d %H:%M:%S.%3N")| eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S.%3N")| eval end_time = strptime(EndTime, "%Y-%m-%d %H:%M:%S") | eval start_time = strptime(StartTime, "%Y-%m-%d %H:%M:%S") | eval BuildTime=tostring(end_time - start_time, "duration") | table JOB_NAME, StartTime, EndTime, BuildTime | sort BuildTime
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+----- Working BTE Jobs sorted by longest duration -------------
+index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/ConsumerSharedComponents/(?<Jobs>[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)" | eval START_TIME=BUILD_START_TIME+"000000" | eval BEND_TIME=END_TIME+"000000" | eval StartTime=strftime(START_TIME/pow(10,9), "%Y-%m-%d %H:%M:%S.%3N")| eval EndTime=strftime(BEND_TIME/pow(10,9),"%Y-%m-%d %H:%M:%S.%3N")| eval end_time = strptime(EndTime, "%Y-%m-%d %H:%M:%S") | eval start_time = strptime(StartTime, "%Y-%m-%d %H:%M:%S") | eval BuildTime=tostring(end_time - start_time, "duration") | table JOB_NAME, StartTime, EndTime, BuildTime | sort -BuildTime
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

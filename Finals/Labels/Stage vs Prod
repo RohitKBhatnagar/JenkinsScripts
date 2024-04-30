@@ -1,0 +1,35 @@
+STAGE LDAP
+==========
+Server - ldaps://stldc66.corp.mastercard.test ldaps://stldc68.corp.mastercard.test
+root DN - DC=corp,DC=mastercard,DC=test
+Allow blank rootDN - unchecked
+User search base - OU=MasterCard Users
+User search filter - sAMAccountName={0}
+Group search base - OU=MasterCard Groups
+Group search filter - (&(objectCategory=group)(cn={0}))
+Group membership - [Selected] Parse user attribute for list of LDAP groups
+	Group membership attribute - memberOf
+					[Not Selected] Search for LDAP groups containing user
+Manager DN - CN=cddsauth,OU=Generic Accounts,OU=MasterCard Users,DC=corp,DC=mastercard,DC=test
+Manager Password - Concealed
+Display Name LDAP attribute - displayName
+Email Address LDAP attribute - mail
+
+
+
+PROD LDAP
+=========
+Server - ldaps://ad.auth.mclocal.int
+root DN - DC=corp,DC=mastercard,DC=org
+Allow blank rootDN - unchecked
+User search base - OU=MasterCard Users
+User search filter - sAMAccountName={0}
+Group search base - OU=MasterCard Groups
+Group search filter - (&(objectCategory=group)(cn={0}))
+Group membership - [Selected] Parse user attribute for list of LDAP groups
+	Group membership attribute - memberOf
+					[Not Selected] Search for LDAP groups containing user
+Manager DN - CN=cddsauth,OU=Generic Accounts,OU=MasterCard Users,DC=corp,DC=mastercard,DC=org
+Manager Password - Concealed
+Display Name LDAP attribute - displayName
+Email Address LDAP attribute - mail

@@ -1,0 +1,48 @@
+#! groovy
+
+//Display the number of jobs using SCM Polling from Freestyle, Pipeline and Maven
+
+import hudson.triggers.*
+ 
+import hudson.maven.MavenModuleSet
+import org.jenkinsci.plugins.workflow.job.*
+
+import java.text.SimpleDateFormat
+def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS")
+def startDate = new Date()
+println "Start time : ${sdf.format(startDate)}"
+
+//Master HostName and IP Address
+println "Controller executed on - ${java.net.InetAddress.getLocalHost()}"
+
+///////////////////////////////////////////////////////////
+  
+  def i = 0;
+  
+  def logSpec = { it, getTrigger -> String spec = getTrigger(it)?.getSpec(); if (spec) println ("${i++} - " + it.getFullName() + " with spec " + spec)}
+  
+println("--- SCM Polling for Pipeline jobs ---")
+i = 0;
+Jenkins.getInstance().getAllItems(WorkflowJob.class).each() { logSpec(it, {it.getSCMTrigger()}) }
+  
+println("\n--- SCM Polling for FreeStyle jobs ---")
+i = 0;
+Jenkins.getInstance().getAllItems(FreeStyleProject.class).each() { logSpec(it, {it.getSCMTrigger()}) }
+  
+println("\n--- SCM Polling for Maven jobs ---");
+i = 0;
+Jenkins.getInstance().getAllItems(MavenModuleSet.class).each() { logSpec(it, {it.getTrigger(SCMTrigger.class)}) }
+ 
+println '\nDone.'
+
+/////////////////////////////////////
+def endDate = new Date()
+println "End time: ${sdf.format(endDate)}"
+
+use(groovy.time.TimeCategory) 
+{
+    def duration = endDate - startDate
+      print "Elapsed time: Days: ${duration.days}, Hours: ${duration.hours}, Minutes: ${duration.minutes}, Seconds: ${duration.seconds}"
+}
+
+return null

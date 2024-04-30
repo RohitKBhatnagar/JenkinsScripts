@@ -1,0 +1,27 @@
+import com.cloudbees.hudson.plugins.folder.AbstractFolder;
+
+def folderName="DataGovernanceandRegulation"
+Jenkins.instance.getItemByFullName(folderName, AbstractFolder).getAllItems()
+.findAll 
+{ 
+  it instanceof ParameterizedJobMixIn.ParameterizedJob || it instanceof AbstractFolder 
+}.eachWithIndex 
+{
+  it, i ->
+  if(it.fullName.contains('DGR_Daily_Regression_Tests_UI_Eagles'))
+  {
+    //println "Class Name - ${it.getClass()"}
+    //it.makeDisabled(true)
+    //println("${i}: Disabled job: [$it.fullName]")
+    println "=================================================================="
+    println("${i}: Disabled job: [$it.fullName] - Class Name - ${it.getClass()}")
+    println "=================================================================="
+  }
+  else
+  {
+    //println("${i}: Job Name: [$it.fullName]")
+    println("${i}: Job Name: [$it.fullName] - Class Name - ${it.getClass()}")
+  }
+}
+
+return

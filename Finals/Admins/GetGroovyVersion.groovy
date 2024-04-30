@@ -1,0 +1,2 @@
+#GetGroovyVersion 
+println GroovySystem.version

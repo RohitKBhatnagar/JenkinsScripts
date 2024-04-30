@@ -1,0 +1,389 @@
+<form theme="dark">
+  <label>Jenkins Label Based Statistics</label>
+  <description>Dashboard will list out various statistics based upon Labels used for particular job. It will plot out the same in various charts for easy outline.</description>
+  <fieldset submitButton="false" autoRun="false">
+    <input type="time" token="timetoken" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>cr<earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <title>Label based build times (in milli seconds)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | stats avg(LabelStats.Duration) as AverageDuration by LabelStats.Label | eval AverageDuration=round(AverageDuration/1000, 2)</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Status">
+          <colorPalette type="map">{"UP":#96C722,"DOWN":#DB4040,"UNKNOWN":#A0A0A0}</colorPalette>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Job Summary Based on Label</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?&lt;Master&gt;.+?)\."|eval MASTER=LTRIM(Master, "https://") | table MASTER, LabelStats.Label, LabelStats.Environment.JOB_BASE_NAME, LabelStats.Environment.BUILD_URL | rename MASTER AS "Controller", LabelStats.Label AS "Label", LabelStats.Environment.JOB_BASE_NAME AS "Job-Name", LabelStats.Environment.BUILD_URL AS "Build-URL"</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="count">6</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Timechart based averages of build times</title>
+      <chart>
+        <search>
+          <query>index=app_jenkins "LabelStats" | timechart span=1h eval(round((avg('LabelStats.Duration')/1000),2)) by LabelStats.Label</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Stats based on build counts (Labels)</title>
+      <chart>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | stats count(LabelStats.HostName) as BuildCount by LabelStats.Label</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Node Labels</option>
+        <option name="charting.axisTitleY.text">Total Build Counts</option>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Build Counts per Label</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | stats count(LabelStats.HostName) as BuildCount by LabelStats.Label</query>
+          <!-- earliest>-60m@m</earliest>
+          <latest>now</latest -->
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Labels</option>
+        <option name="charting.axisTitleY.text">Build Counts</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Build Counts per Label</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | stats count(LabelStats.HostName) as BuildCount by LabelStats.Label</query>
+          <!-- earliest>-60m@m</earliest>
+          <latest>now</latest -->
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.size">large</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Average Execution Times per Label</title>
+      <chart>
+        <title>Time Chart Spanning 1 HR of Average Execution Times (in Secs) per Label</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | timechart span=1h eval(round((avg('LabelStats.BuildAllActions{}.ExecutingTimeMillis')/1000), 2)) as ExecutingTime by LabelStats.Label</query>
+          <!-- earliest>-60m@m</earliest>
+          <latest>now</latest -->
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Labels (1 HR Time Span)</option>
+        <option name="charting.axisTitleY.text">Execution Time (Secs)</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Time Chart Spanning 1 HR of Average Execution Times (in Secs) per Job Name</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | timechart span=1h eval(round((avg('LabelStats.BuildAllActions{}.ExecutingTimeMillis')/1000), 2)) as ExecutingTime by LabelStats.Environment.JOB_BASE_NAME</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Job Name (1 HR Time Span)</option>
+        <option name="charting.axisTitleY.text">Execution Time (Secs)</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Queue Waiting Times (In Seconds)</title>
+      <chart>
+        <title>Average time spent waiting in Q (Secs)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | timechart span=1h eval(round((avg('LabelStats.BuildAllActions{}.QueuingDurationMillis')/1000), 2)) as QueuingDuration by LabelStats.Label</query>
+          <!-- earliest>-60m@m</earliest>
+          <latest>now</latest -->
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time Span (1 HR)</option>
+        <option name="charting.axisTitleY.text">Q Wait Time (Secs)</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Time Chart of Q Wait Times per Item-Name (Secs)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | timechart span=1h eval(round((avg('LabelStats.BuildAllActions{}.WaitingDurationMillis')/1000), 2)) as QWait by LabelStats.Environment.JOB_BASE_NAME</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time Line (Hourly)</option>
+        <option name="charting.axisTitleY.text">Q Wait Time (Secs)</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Q Duration (In Secs) by Job-Name</title>
+        <search>
+          <query>index=app_jenkins "LabelStats"  | timechart span=1h eval(round((avg('LabelStats.BuildAllActions{}.QueuingDurationMillis')/1000), 2)) as QDuration by LabelStats.Environment.JOB_BASE_NAME</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time Line (Hourly)</option>
+        <option name="charting.axisTitleY.text">Q Duration Time (Secs)</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Busy Ratio - Host/Agent(s)</title>
+      <chart>
+        <title>Stats based on Job Counts - Node/Agent(s)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | stats count(LabelStats.Environment.JOB_BASE_NAME) by LabelStats.HostName</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Busy Ratio - Label(s)</title>
+      <chart>
+        <title>Stats based on Job Counts - Labels</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | stats count(LabelStats.Environment.JOB_BASE_NAME) by LabelStats.Label</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Busy Ratio - Controller(s)</title>
+      <chart>
+        <title>Stats based on Job Counts - Controller(s)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?&lt;Master&gt;.+?)\."|eval MASTER=LTRIM(Master, "https://") | stats count(LabelStats.Environment.JOB_BASE_NAME) by MASTER</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Disk Consumption via Log Sizes per Job execution - Host/Agent(s)</title>
+      <chart>
+        <title>Log Length(s) by each Host/Agent(s) in KBs</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | timechart span=1h eval(round((avg('LabelStats.LogLength')/1024), 2)) as LogLength by LabelStats.HostName</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Log Length (KBytes)</option>
+        <option name="charting.axisTitleY.text">Time Span (Hourly)</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Disk Consumption via Log Sizes per Job execution - Label(s)</title>
+      <chart>
+        <title>Log Length(s) by each Label(s) in KBs</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | timechart span=1h eval(round((avg('LabelStats.LogLength')/1024), 2)) as LogLength by LabelStats.Label</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Log Length (KBytes)</option>
+        <option name="charting.axisTitleY.text">Time Span (Hourly)</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Disk Consumption via Log Sizes per Job execution - Controller(s)</title>
+      <chart>
+        <title>Log Length(s) by each Controller(s) in KBs</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?&lt;Master&gt;.+?)\."|eval MASTER=LTRIM(Master, "https://") | timechart span=1h eval(round((avg('LabelStats.LogLength')/1024), 2)) as LogLength by MASTER</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Log Length (KBytes)</option>
+        <option name="charting.axisTitleY.text">Time Span (Hourly)</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Build Status....</title>
+      <table>
+        <title>Build Status by Controller(s)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?&lt;Master&gt;.+?)\."|eval MASTER=LTRIM(Master, "https://") | eventstats count(eval('LabelStats.Result' = "SUCCESS")) as Build-Success by MASTER | eventstats count(eval('LabelStats.Result' = "FAILURE")) as Build-Failures | stats values(MASTER) AS Controller values(Build-Success) AS Success values(Build-Failures) AS Failed</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">true</option>
+        <option name="totalsRow">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Build Status....</title>
+      <table>
+        <title>Build Status by Label(s)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | eventstats count(eval('LabelStats.Result' = "SUCCESS")) as Build-Success by LabelStats.Label | eventstats count(eval('LabelStats.Result' = "FAILURE")) as Build-Failures | stats values(LabelStats.Label) AS Label values(Build-Success) AS Success values(Build-Failures) AS Failed</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">true</option>
+        <option name="totalsRow">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Build Status....</title>
+      <table>
+        <title>Build Status by Node/Agent(s)</title>
+        <search>
+          <query>index=app_jenkins "LabelStats" | eventstats count(eval('LabelStats.Result' = "SUCCESS")) as Build-Success by LabelStats.HostName | eventstats count(eval('LabelStats.Result' = "FAILURE")) as Build-Failures | stats values(LabelStats.HostName) AS Agent values(Build-Success) AS Success values(Build-Failures) AS Failed</query>
+          <earliest>$timetoken.earliest$</earliest>
+          <latest>$timetoken.latest$</latest>
+        </search>
+        <option name="count">6</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+      </table>
+    </panel>
+  </row>
+</form>

@@ -1,0 +1,1 @@
+//Please use the script - D:\WorkArea\JenkinsUtils\Statistics\BuildCountBasedOnProjectType.groovy

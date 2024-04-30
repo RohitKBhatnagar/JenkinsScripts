@@ -1,0 +1,139 @@
+<!-- BTE Dashboard - Jobs -->
+<form>
+  <label>BTE Jobs</label>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <title>CD BTE Projects -  Top 10 Folders and Job Count</title>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd.mastercard.int/jenkins/job/(?&lt;Project_Name&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_]*)"
+| stats count by Project_Name | sort -count | HEAD 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>CD2 BTE Projects - Top 10 Folders and Job Count</title>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd2.mastercard.int/jenkins/job/(?&lt;Project_Name&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_]*)"
+| stats count by Project_Name | sort -count | HEAD 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>CD3 BTE Projects - Top 10 Folders and Job Count</title>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd3.mastercard.int/jenkins/job/(?&lt;Project_Name&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_]*)"
+| stats count by Project_Name | sort -count | HEAD 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>CD4 BTE Projects - Top 10 Folders and Job Count</title>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd4.mastercard.int/jenkins/job/(?&lt;Project_Name&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_]*)"
+| stats count by Project_Name | sort -count | HEAD 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>CD5 BTE Projects - Top 10 Folders and Job Count</title>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://cd5.mastercard.int/jenkins/job/(?&lt;Project_Name&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_]*)"
+| stats count by Project_Name | sort -count | HEAD 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Project Information</title>
+      <input type="dropdown" token="Jenkins">
+        <label>Jenkins</label>
+        <choice value="cd">CD</choice>
+        <choice value="cd2">CD2</choice>
+        <choice value="cd3">CD3</choice>
+        <choice value="cd4">CD4</choice>
+        <choice value="cd5">CD5</choice>
+      </input>
+      <input type="text" token="Project" searchWhenChanged="true">
+        <label>Project</label>
+      </input>
+      <table>
+        <search>
+          <query>index=app_bte splunk_server="*" BUILD_STATUS=*  | rex field=_raw "https://$Jenkins$.mastercard.int/jenkins/job/$Project$/(?&lt;Jobs&gt;[a-zA-Z_a-zA-Z-a-zA-Z\sa-zA-Z0-9_/]*)"
+| stats count by Jobs | sort -count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+</form>

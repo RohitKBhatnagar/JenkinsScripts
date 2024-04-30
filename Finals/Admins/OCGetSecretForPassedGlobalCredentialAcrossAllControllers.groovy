@@ -1,0 +1,44 @@
+//OC Script Console script to pull out global credential secret across all controllers for a given credential name
+//URL - https://github.com/jenkinsci/jenkins/blob/9c443c8d5bafd63fce574f6d0cf400cd8fe1f124/core/src/main/java/hudson/util/Secret.java && https://stackoverflow.com/questions/25547381/what-password-encryption-jenkins-is-using#:~:text=Jenkins%20uses%20AES-128-ECB%20for%20all%20its%20encryptions.%20It,need%20basically%20access%20to%20hudson.util.Secret%20and%20master.key%20files.
+//Run just this commented line to print the passed script on any individual controllers script console to check the output
+//com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(com.cloudbees.plugins.credentials.common.StandardCredentials.class,Jenkins.getInstance(),null,null).findAll { it instanceof com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl }.each { 
+  //if(it.username.matches('ldap_fusion_svn'))
+//  	println "${it.username} : ${it.password}" 
+//}
+
+//Script to encrypt or decrypt a passed Jenkins secret
+//println (hudson.util.Secret.fromString("m8WwNE5j5xDbuNbxHE8!").getEncryptedValue())
+//println (hudson.util.Secret.fromString("{AQAAABAAAAAgSGMFxB3sJi6erzn4cybiI+ZNfTEON70ANYhWT7XALviJKnbpwzMZNq9miUMMPefr}"))
+
+import com.cloudbees.opscenter.server.model.*
+import com.cloudbees.opscenter.server.clusterops.steps.*
+import hudson.remoting.*
+
+controllers = []
+scriptToRun = """
+com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(com.cloudbees.plugins.credentials.common.StandardCredentials.class,Jenkins.getInstance(),null,null).findAll { it instanceof com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl }.each { if(it.username.matches('ldap_fusion_svn')) { print (hudson.util.Secret.fromString(it.password.getPlainText()).getEncryptedValue()); print(" - "); print(it.password);  }}
+x=null
+"""
+
+Jenkins.instance.getAllItems(ConnectedMaster.class).each {
+  controllers.add(getHost(it.channel, it.class.simpleName, it.encodedName))
+}
+
+def getHost(channel, type, name){
+  def hostReturnStr
+  if(channel){
+    def stream = new ByteArrayOutputStream()
+    def listener = new StreamBuildListener(stream)
+    channel.call(new MasterGroovyClusterOpStep.Script(
+        scriptToRun,
+        listener,
+        "host-script.groovy",
+        [:]))
+    hostReturnStr = stream.toString()
+
+  }
+  return channel ? "${name} - ${hostReturnStr}" : "${name} - NOTFOUND"
+}
+
+controllers.each { if (it) { println it } }
+x=null

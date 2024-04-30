@@ -1,0 +1,138 @@
+////SPLUNK updates to the Build Days Dashboard
+
+//Current Query with modifications to not include (master) as node name
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" type=completed job_duration<43200 node != "(master)" 
+         | eval job_day=round(job_duration/86400,2)
+         | rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+         | fields job_duration, host, job_day, JobName | stats sum(job_day) AS executor_days by JobName, host
+
+/**
+** JSON output (raw)
+{"job_type":"Freestyle project","metadata":{"scm_url":"https://globalrepository.mclocal.int/stash/scm/ethoca-collab/ci-azure-infrastructure.git","scm":"git","branch":"origin/master","revision":"2e101b4aeafa9815ff708533b857d385487374ca"},"upstream":"","scm_url":"https://globalrepository.mclocal.int/stash/scm/ethoca-collab/ci-azure-infrastructure.git","job_duration":49.068,"label":"DEVCLD-LIN7","type":"completed","branch":"origin/master","revision":"2e101b4aeafa9815ff708533b857d385487374ca","queue_time":0.007,"event_tag":"job_event","node":"ech-10-157-156-56","job_name":"EthocaCollaborationServices/Connected-Intelligence/ethoca-bads-powerbi-license-guest-inviter-prod","test_summary":{"duration":0.0,"skips":0,"total":0,"failures":0,"passes":0},"build_number":2565,"job_result":"SUCCESS","trigger_by":"Started by timer","scm":"git","user":"(timer)","build_url":"job/EthocaCollaborationServices/job/Connected-Intelligence/job/ethoca-bads-powerbi-license-guest-inviter-prod/2565/","queue_id":15181903,"job_started_at":"2022-04-18T14:36:00Z"}
+**
+** Syntax highlighted
+ branch: origin/master
+   build_number: 2565
+   build_url: job/EthocaCollaborationServices/job/Connected-Intelligence/job/ethoca-bads-powerbi-license-guest-inviter-prod/2565/
+   event_tag: job_event
+   job_duration: 49.068
+   job_name: EthocaCollaborationServices/Connected-Intelligence/ethoca-bads-powerbi-license-guest-inviter-prod
+   job_result: SUCCESS
+   job_started_at: 2022-04-18T14:36:00Z
+   job_type: Freestyle project
+   label: DEVCLD-LIN7
+   metadata: { [+]
+   }
+   node: ech-10-157-156-56
+   queue_id: 15181903
+   queue_time: 0.007
+   revision: 2e101b4aeafa9815ff708533b857d385487374ca
+   scm: git
+   scm_url: https://globalrepository.mclocal.int/stash/scm/ethoca-collab/ci-azure-infrastructure.git
+   test_summary: { [+]
+   }
+   trigger_by: Started by timer
+   type: completed
+   upstream:
+   user: (timer)
+}
+host = cd5.mastercard.int
+**/
+
+//With label and host names included
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" type=completed job_duration<86400 node != "(master)" 
+         | eval job_day=round(job_duration/86400,2)
+         | rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+         | fields job_duration, label, job_day, host, JobName | stats sum(job_day) AS executor_days by JobName, host, label
+
+//Executor Days with just Label Names across all controllers whether completed or not
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" job_duration<86400 node != "(master)" 
+         | eval job_day=round(job_duration/86400,2)
+         | fields job_duration, label, job_day, host  | stats sum(job_day) AS executor_days by label, host
+
+//Timechart using 1 day for a job_day
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" job_duration<86400 node != "(master)" 
+         | eval job_day=round(job_duration/86400,2)
+         | fields job_duration, label, job_day, host  | timechart span=1d eval(sum(job_day)) AS executor_days by label
+
+
+//Time sliced into 1 day but using stats query
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" job_duration<86400 node != "(master)" | bin _time span=1d
+         | eval job_day=round(job_duration/86400,2)
+         | fields job_duration, label, job_day, host  | stats sum(job_day) AS executor_days by _time host label
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Queue wait times per label and per controller time sliced 
+index=jenkins_statistics host IN (cd3.mastercard.int, jkm9stl4, jkm9stl5, cd2.mastercard.int, jkm9stl2, jkm9stl3, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" node != "(master)" | bin _time span=1d
+         | fields queue_time, label, host  | stats p90(queue_time) AS P90_QWait, p50(queue_time) AS P50_QWait, avg(queue_time) AS Avg_QWait by _time host label
+
+
+
+=================================================================
+----------- LABEL Based statistics ------------------------------
+
+//Label based build counts
+index=app_jenkins "LabelStats"  | timechart span=1h eval(count('LabelStats.HostName')) as BuildCounts by LabelStats.Label
+
+//Average build times
+index=app_jenkins "LabelStats"  | eventstats  avg(LabelStats.Duration) as AverageDuration by LabelStats.Label | eval AverageDuration=round(AverageDuration/1000, 2) |stats values(AverageDuration) as AvgDuration(S) by LabelStats.Label
+
+//Same query as above to collect average build times but using different index
+index=jenkins_statistics host IN (cd.mastercard.int, jkm2stl0, jkm2stl1) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" | eventstats  avg(job_duration) as AverageDuration by label | eval AverageDuration=round(AverageDuration/1000, 2) |stats values(AverageDuration) as AvgDuration(S) by label
+
+index=jenkins_statistics sourcetype="json:jenkins" | eventstats  p90(job_duration) as P90Duration by label | eval P90Duration=round(P90Duration/1000, 2) |stats values(P90Duration) as P90thDuration(S) by label
+
+//Label based Queue Wait Times collected as 90th percentile (Query sets 5 minutes as baseline for Q Wait Times)
+//=============================================================================================================
+index=app_jenkins "LabelStats" LabelStats.Label!="" LabelStats.TimeSpentInQueue > 300000 | rex field=LabelStats.Environment.BUILD_URL "^(?<Master>.+?)\."| eval Controller=LTRIM(Master, "https://") | bin _time span=1h | eventstats  p90(LabelStats.TimeSpentInQueue) as p90Duration by Controller, LabelStats.Label | eval p90Duration=round(p90Duration/1000, 2) | stats values(p90Duration) as P90Duration(S) by _time Controller LabelStats.Label
+
+//Job_Duration per controller and top-folder-name
+index=jenkins_statistics host IN (cd2.mastercard.int, jkm9stl2, jkm9stl3, cd3.mastercard.int, jkm9stl4, jkm9stl5, cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" type=completed 
+         | rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+         | fields job_duration, host, JobName | stats count(JobName) as TotalJobs p90(job_duration)  AS job_duration_90th min(job_duration) as job_duration_min max(job_duration) as job_duration_max by host, JobName
+
+//Job Duration (completed) with no controller name specified
+index=jenkins_statistics source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" type=completed 
+| rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+| fields job_duration, host, JobName | stats count(JobName) as TotalJobs p90(job_duration)  AS job_duration_90th min(job_duration) as job_duration_min max(job_duration) as job_duration_max by host, JobName
+
+//Jobs which ran > 7200 Secs
+index=jenkins_statistics source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" job_duration>=7200
+| rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+| fields job_duration, host, JobName | top 10 JobName, job_duration by host | stats count(JobName) as TotalJobs p90(job_duration)  AS job_duration_90th min(job_duration) as job_duration_min max(job_duration) as job_duration_max by host, JobName
+
+
+/////////////////////////////////////////////////////////////////////////
+//Top 10 Folder Names with job durations per controller
+index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?<Master>.+?)\."| eval Controller=LTRIM(Master, "https://") | rex field=LabelStats.Name "^(?<Name>.+?)\/"| stats count(Name) as TotalJobs p90(eval(round('LabelStats.Duration'/1000, 2))) as P90Duration(S) min(eval(round('LabelStats.Duration'/1000, 2))) as MinDuration(S) max(eval(round('LabelStats.Duration'/1000, 2))) as MaxDuration(S) by Controller, Name | top 10 TotalJobs, P90Duration(S), MinDuration(S), MaxDuration(S) by Controller, Name | table Controller, Name, TotalJobs, P90Duration(S), MinDuration(S), MaxDuration(S)
+
+//Jobs in all folders
+index=app_jenkins "LabelStats" | rex field=LabelStats.Name "^(?<Name>.+?)\/"| stats values(LabelStats.Name) by Name
+
+//Jobs in specific folder
+index=app_jenkins "LabelStats" | rex field=LabelStats.Name "^(?<Name>.+?)\/"| where Name = "LoyaltyRewards" | stats count(LabelStats.Name) as Total values(LabelStats.Name) as AllJobs by Name
+
+//Jobs in specific folder in seconds
+index=app_jenkins "LabelStats" | rex field=LabelStats.Name "^(?<Name>.+?)\/"| where Name = "MastercardDigitalEnablementService" | stats first(eval(round('LabelStats.Duration'/1000, 2))) as Duration(s) by Name, LabelStats.Name | sort Duration(s) desc
+
+//////==== Rough Work ============
+index=app_jenkins "LabelStats" | rex field=LabelStats.Environment.BUILD_URL "^(?<Master>.+?)\."| eval Controller=LTRIM(Master, "https://") | rex field=LabelStats.Name "^(?<Name>.+?)\/"| stats count(Name) as TotalJobs p90(eval(round('LabelStats.Duration'/1000, 2))) as P90Duration(S) min(eval(round('LabelStats.Duration'/1000, 2))) as MinDuration(S) max(eval(round('LabelStats.Duration'/1000, 2))) as MaxDuration(S) by Controller, Name
+
+index=app_jenkins "LabelStats" | rex field=LabelStats.Name "^(?<Name>.+?)\/"| where Name = "LoyaltyRewards" | table Name, LabelStats.Name, LabelStats.Duration
+
+
+=================
+
+[5/12/2022 1:34 PM] Jain, Shivani
+index=app_jenkins "LabelStats" LabelStats.Label!="" LabelStats.Environment.BUILD_URL
+="*MPS*" | rex field=_raw "LabelStats - (?<json>.*)" | rename json as _raw | rex field=LabelStats.Environment.BUILD_URL "^(?<Master>.+?)\."| eval Controller=LTRIM(Master, "https://") | bin _time span=1h | eventstats p90(LabelStats.TimeSpentInQueue) as p90Duration by Controller, LabelStats.Label | eval p90Duration=round(p90Duration/1000, 2) | stats values(p90Duration) as P90Duration(S) by _time Controller LabelStats.Label, LabelStats.Environment.BUILD_URL
+
+[5/12/2022 1:34 PM] Jain, Shivani
+index=jenkins_statistics host IN (cd5.mastercard.int, jkm9stl8, jkm9stl9) source IN ("/job_event","jenkins/job_event") sourcetype="json:jenkins" event_tag="job_event" build_url="*MPS*"
+| rex field=_raw "job/(?<JobName>[a-zA-Z]*)"
+| fields host, build_url, job_started_at, job_name, job_duration, queue_time | stats count by job_name, build_url, job_duration, queue_time | sort -queue_time
+
+//For searching entire Job folder
+index=app_jenkins "LabelStats" LabelStats.Label!="" LabelStats.Environment.JOB_NAME="MPSPN/*" | rex field=_raw "LabelStats - (?<json>.*)" | rename json as _raw | rex field=LabelStats.Environment.BUILD_URL "^(?<Master>.+?)\."| eval Controller=LTRIM(Master, "https://") | bin _time span=1h | eventstats p90(LabelStats.TimeSpentInQueue) as p90Duration by Controller, LabelStats.Label | eval p90Duration=round(p90Duration/1000, 2) | stats values(p90Duration) as P90Duration(S) by _time Controller LabelStats.Label, LabelStats.Environment.BUILD_URL
